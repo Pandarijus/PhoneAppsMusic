@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "958820421000",
+    "firebase_url": "https://musicpop-d9bec-default-rtdb.europe-west1.firebasedatabase.app/",
+    "project_id": "musicpop-d9bec",
+    "storage_bucket": "musicpop-d9bec.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:958820421000:android:d63e59faf8317941e7fe3d",
+        "android_client_info": {
+          "package_name": "com.PandarijusGames.MusicPop"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "958820421000-a7fphl7huln7pkeb4srp2bsjtfta66mi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6XAKlp1Q94H4i-NQBI42Fb6B6jL3XHGc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "958820421000-a7fphl7huln7pkeb4srp2bsjtfta66mi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
