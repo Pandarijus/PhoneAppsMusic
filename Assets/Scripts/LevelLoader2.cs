@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SocialPlatforms.Impl;
 
 public class LevelLoader2 : MyButton
 {
@@ -8,7 +9,7 @@ public class LevelLoader2 : MyButton
     void Awake()
     {
         //Debug.Log(clip);
-        GetComponentInChildren<DisplayHighScore>().DisplayTheHighScore(PathBoy.GetPathMusicNameWithoutSpaces(clip.name));
+        GetComponentInChildren<DisplayHighScore>().DisplayTheHighScore(PathBoy.GetPathMusicName(clip.name));
        // text = GetComponentInChildren<TextMeshProUGUI>();
     }
     
@@ -20,7 +21,8 @@ public class LevelLoader2 : MyButton
     // }
     protected override void OnClick()
     {
-        MyReferences.instance.loadingPanel_LEVELS.SetActive(true);
+        FirebaseManager.SaveMyMusicPathToMyProfile(clip.name, "Default Song");
+        MyReferences.instance.loadingPanel.SetActive(true);
         Saver.instance.clip = clip;
         Loader.LoadPlay();
         

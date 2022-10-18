@@ -1,185 +1,128 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class PathBoy : MonoBehaviour
 {
     //  private List<string> paths = new List<string>();
     public static PathBoy instance;
-    private List<string> mp3PathList = new List<string>();
+
+    //  private List<string> mp3PathList;
     private string[] mp3Paths;
+
     private Dictionary<string, AudioClip> musicCashe = new Dictionary<string, AudioClip>();
-   // private string currentselectedMusicPath;
-    private string saveFilePath,persistentDataPath;
-    private bool hasLoadedBefore;
-    
+    //private static Dictionary<string, string> nameToPath;
+
+    // private string currentselectedMusicPath;
+    private string persistentDataPath;
+  //  private bool hasLoadedBefore;
+    private int currentMusicIndex;
+
+    public static bool loadedAllPaths;
+   // private const string DIC_SAVEFILE_NAME = "dicSave.txt";
+
 
     void Awake()
     {
-        CheckForOthers();
+        SingeltonCall();
     }
 
-    private void CheckForOthers()
+    private void SingeltonCall()
     {
-        if (FindObjectsOfType<PathBoy>().Length > 1)
-        {
-            Destroy(gameObject);
-        }
-        else
+        if (instance == null)
         {
             instance = this;
             DontDestroyOnLoad(gameObject);
         }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
-    private void Start()
+    private string[] savedDicPaths;
+    private async void Start()
     {
         persistentDataPath = Application.persistentDataPath;
-        saveFilePath = persistentDataPath + "/savedPaths.txt";
-      //  Debug.Log(saveFilePath);
-       // bool saveFileWasCreated = File.Exists(saveFilePath);
-        // if (saveFileWasCreated && false)
-        // {
-            // Debug.Log("SaveFileWasAlreadyCreated");
-            // LoadMP3PathsFromFile();
-        // }
-        // else
-        // {
-            // SetupAndSaveMP3Paths();
-        // }
-        Invoke(nameof(Setup),0.01f);
-        if (hasLoadedBefore == false)
-        {
-            Loader.LoadLevel(Level.Menu);
-        }
+        savedDicPaths = Bigbrain.GetTextFromFile("dicSave.txt");
+         await Task.Run(Setup);
+         loadedAllPaths = true;
+         Debug.Log("LOADED PATHS SUCCESFULLY");
+
+         //Invoke(nameof(Setup), 0.01f);
+         // if (hasLoadedBefore == false)
+         // {
+         //     Loader.LoadLevel(Level.Menu);
+         // }
     }
-    
+
     private void Setup()
     {
-        SetupMP3Paths();
-       // SetupAndSaveMP3Paths();
+        string path;
 #if UNITY_EDITOR
-        Debug.Log(GetMP3Paths().Length);
-#endif
-       
-    }
+        path = @"C:\Users\krott\Music";
 
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            Loader.LoadPrevLevel();
-        }
-    }
-
-
-    // public void SetupAndSaveMP3Paths()
-    // {
-    //     SetupMP3Paths();
-    //    // SaveMP3Paths();
-    // }
-
-    private static void DebugStringArray(string[] strings)
-    {
-        //Debug.Log("Debuging");
-        foreach (var str in strings)
-        {
-            Debug.Log("[" + str + "]");
-        }
-    }
-
-    private void SetupMP3Paths()//async
-    {
-#if UNITY_EDITOR
-        FindMP3Directories(@"C:\Users\krott\Music");
-       
-        //FindMP3Directories(@"C:\");
 #else
-         FindMP3Directories("/storage");
+        path = "/storage";
 #endif
-        //mp3PathList.Sort();
-        mp3Paths =  mp3PathList.ToArray();
+        try
+        {
+            FindAllDirectoriesWithMp3s(path);
+        }
+        catch (Exception e)
+        {
+        }
+      
+        foreach (var savedDicPath in savedDicPaths) //error when no file created>
+        {
+            var d = myDirectories.Keys.Where(k => k.FullName.Equals(savedDicPath)).FirstOrDefault();
+            myDirectories[d] = false;
+        }
+        //Bigbrain.SaveTextToFile("dicSave.txt","");
+        ReloadMp3s();
+    }
+
+    public void ReloadMp3s()
+    {
+        List<string> mp3PathsList = new List<string>();
+        foreach (var dic in myDirectories)
+        {
+            if (dic.Value == true) //if dic is activated
+            {
+                mp3PathsList.AddRange(dic.Key.GetFiles("*mp3").Select(e => e.FullName));
+            }
+        }
+
+        // mp3Paths = Directory.EnumerateFiles(path, "*.mp3", SearchOption.AllDirectories).ToArray();
+        mp3Paths = mp3PathsList.ToArray();
         Array.Sort(mp3Paths);
     }
 
-//     private void SaveMP3Paths()
-//     {
-//         foreach (var mp3Path in mp3PathList)
-//         {
-//             File.WriteAllText(saveFilePath, mp3Path + Environment.NewLine);
-//         }
-//         
-// #if UNITY_EDITOR
-//         Debug.Log("Saved File");
-// #endif
-//         
-//      
-//     }
 
-    public void FindMP3Directories(string path)
+    //
+
+
+    public void FindAllDirectoriesWithMp3s(string path)
     {
         foreach (var directory in new DirectoryInfo(path).GetDirectories())
         {
-            FileInfo[] mp3Files;
-            try
-            {
-                mp3Files = directory.GetFiles("*.mp3");
-            }
-            catch (Exception e)
-            {
-                continue; //Skip Serching Dictonary if Access is Denied
+            if (Directory.GetFiles(directory.FullName, "*.mp3").Length > 0)
+            {   
+//                Debug.Log($"Adding to directory{directory.Name}");
+                myDirectories.Add(directory, true);
             }
 
-            foreach (var mp3File in mp3Files)
-            {
-                mp3PathList.Add(mp3File.FullName); //add mp3 path to list
-            }
-
-            FindMP3Directories(directory.FullName);
+            FindAllDirectoriesWithMp3s(directory.FullName);
         }
     }
 
-    // private void LoadMP3PathsFromFile()
-    // {
-    //     var lines = File.ReadAllLines(saveFilePath);
-    //     foreach (var line in lines)
-    //     {
-    //         Debug.Log("[" + line + "]"); //still have to remove /m
-    //         var l = line.Remove(line.Length - 2, 2);
-    //         Debug.Log("[" + l + "]"); //still have to remove /m
-    //     }
-    // }
-
-
-    // // // // // // // // //
-    // public void SaveAllDirectories(string path)
-    // {
-    //    SaveAllDirectories("/storage");
-    // }
-    // private void SaveDirecotries(string path)
-    // {
-    //     foreach (var directory in new DirectoryInfo(path).GetDirectories())
-    //     {
-    //         paths.Add(directory.FullName);
-    //         SaveDirecotries(directory.FullName);
-    //     }
-    // }
-    // private void SaveFilesToPath()
-    // {
-    //     foreach (var path in paths)
-    //     {
-    //         File.AppendAllText(saveFilePath, path + Environment.NewLine);
-    //     }
-    // }
-    // // // // // // // //
-
-  
-
     public async Task LoadAudioClip(string currentselectedMusicPath)
-    { 
+    {
         AudioClip audioClip;
         if (musicCashe.ContainsKey(currentselectedMusicPath)) //Check if cashed
         {
@@ -187,27 +130,27 @@ public class PathBoy : MonoBehaviour
         }
         else //load out of storage
         {
-
-            string oldName =  Path.GetFileName(currentselectedMusicPath);
+            string oldName = Path.GetFileName(currentselectedMusicPath);
             string path;
-            string fileName;
+            string fileName = oldName;
             if (oldName.Contains(" "))
             {
-                string newName =  RemoveSpaces(oldName);
-                Debug.Log("HAD WHITESPACE: ["+oldName+"]" +" ["+newName+"]");
-                string newPath = persistentDataPath+"/"+newName;
+                string newName = RemoveSpaces(oldName);
+                Debug.Log("HAD WHITESPACE: [" + oldName + "]" + " [" + newName + "]");
+                string newPath = persistentDataPath + "/" + newName;
                 if (!File.Exists(newPath))
                 {
-                    File.Copy(currentselectedMusicPath,newPath);
+                    File.Copy(currentselectedMusicPath, newPath);
                 }
+
                 Debug.Log(newPath);
                 path = newPath;
-                fileName = newName;
+                //  fileName = oldName; newName
             }
             else
             {
                 path = currentselectedMusicPath;
-                fileName = oldName;
+                //fileName = oldName;
             }
 
 
@@ -216,73 +159,92 @@ public class PathBoy : MonoBehaviour
             {
                 await Task.Yield();
             }
-            
+
             audioClip = www.GetAudioClip(false, false);
-            audioClip.name = fileName.Replace(".mp3","");
+            audioClip.name = fileName.Replace(".mp3", "");
             musicCashe[currentselectedMusicPath] = audioClip; //Add to cashe
-
-            Saver.instance.clip = audioClip;
-
-            // var www = new WWW("file:///" + currentselectedMusicPath); //this shouldn't work
-            // while (!www.isDone) //wait for request to finish
-            // {
-            //     await Task.Yield();
-            // }
-            //
-            // audioClip = www.GetAudioClip(false, false);
-            // audioClip.name = GetPathMusicName(currentselectedMusicPath); // audionames[index].Replace(".mp3", ""));
-            // musicCashe[currentselectedMusicPath] = audioClip; //Add to cashe
         }
 
+        Saver.instance.clip = audioClip;
     }
 
-    // public void SetAudioClip(AudioClip clip)
-    // {
-    //     audioClip = clip;
-    // }
-
-    // public AudioClip GetAudioClip()
-    // {
-    //     return audioClip;
-    // }
-    // public string GetAudioClipName()
-    // {
-    //     return (audioClip!=null)?audioClip.name:"";
-    // }
 
     public static string GetPathMusicName(string path)
     {
         return Path.GetFileName(path).Replace(".mp3", "");
     }
-    public static string GetPathMusicNameWithoutSpaces(string path)
-    {
-        return RemoveSpaces(GetPathMusicName(path));
-    }
+    // public static string GetPathMusicNameWithoutSpaces(string path)
+    // {
+    //     return RemoveSpaces(GetPathMusicName(path));
+    // }
 
     public async void LoadLevel(string path)
     {
-        MyReferences.instance.loadingPanel_LEVELS.SetActive(true);
+      
+        //   MyReferences.instance.loadingPanel.SetActive(true);
+        string songName = GetPathMusicName(path);
+        LoadingPanelManager.instance.SetTexts(songName,ScoreManager.GetHighScore(songName));
+        FirebaseManager.SaveMyMusicPathToMyProfile(GetPathMusicName(path), path);
+        //Debug.Log($"Give Info to Loading Panel of name:{songName} = Highscore:{ScoreManager.GetHighScore(songName)}");
+        
+        // if ( MyReferences.instance.loadingPanel_LEVELS != null)
+        // {
+        //     MyReferences.instance.loadingPanel_LEVELS.SetActive(true);
+        // }
+        // else
+        // {
+        //     MyReferences.instance.loadingPanel.SetActive(true);
+        // }
+        
         await LoadAudioClip(path);
         Loader.LoadPlay();
+        LoadingPanelManager.instance.Hide();
     }
 
-    // public void RemoveAllSpacesInMP3Paths()
-    // {
-    //     for (int i = 0; i < mp3PathList.Count; i++)
-    //     {
-    //         var oldPath = mp3PathList[i];
-    //         var newPath = oldPath.Replace(" ", "");
-    //         File.Move(oldPath, newPath);
-    //         mp3PathList[i] = newPath;
-    //     }
-    // }
-    private static string RemoveSpaces(string path)
+    public void LoadRandomLevel()
     {
-       return path.Replace(" ", "");
+        if(mp3Paths.Length == 0) return;
+        var r = Random.Range(0, mp3Paths.Length);
+        LoadLevelByIndex(r);
+        // LoadLevel(mp3Paths[r]);
+    }
+
+    private void LoadLevelByIndex(int index)
+    {
+        currentMusicIndex = index;
+        Debug.Log($"{mp3Paths.Length} : {index}");
+        LoadLevel(mp3Paths[index]);
+    }
+
+    public static string RemoveSpaces(string path)
+    {
+        return path.Replace(" ", "");
     }
 
     public string[] GetMP3Paths()
     {
         return mp3Paths; //mp3PathList.ToArray();
+    }
+
+    public void LoadPrevLevel()
+    {
+        LoadLevelByIndex(Bigbrain.MakeArraySave(currentMusicIndex - 1, mp3Paths.Length));
+    }
+
+    public void LoadNextLevel()
+    {
+        LoadLevelByIndex(Bigbrain.MakeArraySave(currentMusicIndex + 1, mp3Paths.Length));
+    }
+
+    public Dictionary<DirectoryInfo, bool> GetDirectories()
+    {
+        return myDirectories;
+    }
+
+    private Dictionary<DirectoryInfo, bool> myDirectories = new Dictionary<DirectoryInfo, bool>();
+
+    public void ChangeAcitveDirecories(DirectoryInfo key, bool isActive)
+    {
+        myDirectories[key] = isActive;
     }
 }

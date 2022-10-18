@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 using Random = UnityEngine.Random;
 
 public class ScoreManager : MyDisplay
@@ -13,7 +14,7 @@ public class ScoreManager : MyDisplay
         instance = this;
 
     }
-    public void MusicBlockWasClicked(float lifeTime,Vector3 blockPos)
+    public void MusicBlockWasClicked(float lifeTime,Vector3 blockPos,Color blockColor)
     {
      //   Debug.Log(blockPos);
         
@@ -21,10 +22,18 @@ public class ScoreManager : MyDisplay
         if (score > 0)
         {
             int comboLevel = Combo.instance.GetComboLevel();
-            score *= comboLevel;
+            if (comboLevel == 0)//sliding
+            {
+                score = Mathf.RoundToInt(score*0.1f);
+            }
+            else
+            {
+                score *= comboLevel;
+            }
+            
             AddScore(score);
-            Spawner.instance.SpawnAnimatedTextFieled(score,blockPos);
-            Spawner.instance.SpawnExplosion(blockPos);
+            Spawner.instance.SpawnAnimatedTextFieled(score,blockPos,blockColor);
+            Spawner.instance.SpawnExplosion(blockPos,blockColor);
             SoundManager.instance.PlayBlockCrunchySounds();
            
           
@@ -55,40 +64,41 @@ public class ScoreManager : MyDisplay
     public static int GetHighScore(string name)
     {
     //    Debug.Log( "Got Highsoce:   "+name+"    "+PlayerPrefs.GetInt(GetHiscoreName(name),0));
-        return  PlayerPrefs.GetInt(GetHiscoreName(name),0);
+        return  PlayerPrefs.GetInt(GetHighscoreName(name),0);
     }
     public static int GetHighScore()
     {
 //        Debug.Log( "Got Highsoce:"+PlayerPrefs.GetInt(GetHiscoreName(),0));
-        return  PlayerPrefs.GetInt(GetHiscoreName(),0);
+        return  PlayerPrefs.GetInt(GetHighscoreName(),0);
     }
 
 
-    public static string GetHiscoreName()
+    private static string GetHighscoreName()
     {
         return "HighScore"+ Saver.instance.GetAudioClipName();
     }
-    public static string GetHiscoreName(string name)
+    private static string GetHighscoreName(string name)
     {
         return "HighScore"+ name;
     }
 
-    private void UpdateHigscore()
+    public void SaveHigscore()
     {
         int oldHighscore = GetHighScore();
+//        Debug.Log($"name:[{GetHiscoreName()}] old higscore: {oldHighscore}  new score:{score}");
         if (score > oldHighscore)
         {
-          //  Debug.Log("Saved"+GetHiscoreName()+score);
+//            Debug.Log("Saved"+GetHiscoreName()+score);
             //trigger applause or fireworks/ reward for new highscore
-            PlayerPrefs.SetInt(GetHiscoreName(),score);
+            PlayerPrefs.SetInt(GetHighscoreName(),score);
         }
       
     }
 
-    private void OnDisable()
-    {
-        UpdateHigscore();
-    }
+    // private void OnDisable()
+    // {
+    //     SaveHigscore();
+    // }
 }
    
     

@@ -5,12 +5,17 @@ using UnityEngine;
 public class MusicBlock : MonoBehaviour
 {
     private Rigidbody2D rb;
- //   [SerializeField] private float speed = 3;
+
+    //   [SerializeField] private float speed = 3;
     private static float moveSpeed = 3f;
 
-    [SerializeField] private Gradient colorGradient;
     private float spawnedTime;
     private SpriteRenderer renderer;
+
+    public delegate void Change(float change);
+
+    public static Change SpeedChange;
+
 
     void Awake()
     {
@@ -18,41 +23,71 @@ public class MusicBlock : MonoBehaviour
         renderer = GetComponent<SpriteRenderer>();
     }
 
+    public static void ChangeAllSpeeds(float speedChange)
+    {
+        SpeedChange?.Invoke(speedChange);
+    }
+
     private void OnEnable()
     {
         rb.velocity = Vector2.down * moveSpeed;
         spawnedTime = Time.timeSinceLevelLoad;
+        SpeedChange += SetMoveSpeed;
     }
 
-    private void FixedUpdate()
+    private void OnDisable()
     {
-        float lifeTime = Time.timeSinceLevelLoad - spawnedTime;
-        renderer.color = colorGradient.Evaluate(GetTimingValue(lifeTime));
-    }
-
-    public static float GetTimingValue(float lifeTime)
-    {
-        float diff = Mathf.Abs( AudioVisualizer.staticStartDelay - lifeTime);       // float value = (diff < 1)? (1 - diff) : 0;
-        return (diff < 1) ? (1 - diff) : 0;
-    }
-
-
-    private void OnMouseDown()
-    {
-        float lifeTime = Time.timeSinceLevelLoad - spawnedTime;
-        ScoreManager.instance.MusicBlockWasClicked(lifeTime, transform.position);
-        Spawner.instance.DisposeMusicBlock(gameObject);
-    }
-
-    private void OnTriggerEnter2D(Collider2D col)
-    {
-        Combo.instance.StopCombo();
-        gameObject.SetActive(false);
-        Spawner.instance.DisposeMusicBlock(gameObject);
+        SpeedChange -= SetMoveSpeed;
     }
 
     public void SetMoveSpeed(float value)
     {
         moveSpeed = value;
+        rb.velocity = Vector2.down * moveSpeed;
+    }
+
+    private void FixedUpdate()
+    {
+        float lifeTime = Time.timeSinceLevelLoad - spawnedTime;
+        renderer.color = GradientManager.Evaluate(GetTimingValue(lifeTime));
+    }
+
+   
+
+    public static float GetTimingValue(float lifeTime)
+    {
+     float leeway = 0.8f;
+     //+ 0.5f 
+        float diff =
+            Mathf.Abs(AudioVisualizer.MUSIC_START_DELAY - lifeTime); // float value = (diff < 1)? (1 - diff) : 0;
+        return (diff < leeway) ? (1 - diff) : 0;
+    }
+
+
+    // private void OnMouseDown()
+    // {
+    //     Crunch();
+    // }
+
+    private void Crunch()
+    {
+        float lifeTime = Time.timeSinceLevelLoad - spawnedTime;
+        ScoreManager.instance.MusicBlockWasClicked(lifeTime, transform.position, renderer.color);
+        Spawner.instance.DisposeMusicBlock(gameObject);
+    }
+
+    private void OnTriggerEnter2D(Collider2D col)
+    {
+        if (col.tag.Equals("Player"))
+        {
+            Crunch();
+        }
+        else
+        {
+            //HealthManager.instance.TakeDamage();
+            Combo.instance.StopCombo();
+            gameObject.SetActive(false);
+            Spawner.instance.DisposeMusicBlock(gameObject);
+        }
     }
 }

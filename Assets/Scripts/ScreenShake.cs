@@ -1,5 +1,7 @@
+using System;
 using System.Threading.Tasks;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class ScreenShake : MonoBehaviour
 {
@@ -37,5 +39,11 @@ public class ScreenShake : MonoBehaviour
     private void Shake(float magnitude)
     {
         transform.localPosition += new Vector3(Random.Range(-magnitude, magnitude),Random.Range(-magnitude, magnitude),0 );
+    }
+
+    public void StopShaking()
+    {
+        isShaking = false;
+        end = 0;
     }
 }

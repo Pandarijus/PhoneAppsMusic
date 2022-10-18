@@ -6,50 +6,121 @@ public class Player : MonoBehaviour
     public static Player instance;
     private Camera cam;
     private Vector3 lastPosition;
-  //  private CircleCollider2D _collider2D;
+    private  CircleCollider2D _collider2D;
+    public static TrailRenderer trailRenderer;
+
+    [SerializeField] private GameObject slidingIcon;
 
     private void Awake()
     {
         instance = this;
         cam = Camera.main;
-      //  _collider2D = GetComponent<CircleCollider2D>();
+        _collider2D = GetComponent<CircleCollider2D>();
+        trailRenderer =GetComponent<TrailRenderer>();
+        TurnOffCollider();
     }
 
+    private void Start()
+    {
+        var color = Saver.instance.colorPalette.mainColor;
+        trailRenderer.startColor = color;
+        trailRenderer.endColor = color;
+    }
+
+    private float maxTimeForTap = 0.3f;
+    private float timer;
+    private bool holding;
     void Update()
     {
+
+        if (  AudioVisualizer.isPaused)
+        {
+            return;
+        }
+
+      
         
         
 
 #if UNITY_EDITOR
+        var pos = cam.ScreenToWorldPoint(Input.mousePosition);
+        pos.z = 0;
+        transform.position = pos;
+        if (holding)
+        {
+            timer += Time.deltaTime;
+            if (timer > maxTimeForTap)
+            {
+                Combo.instance.StartSliding();
+                slidingIcon.SetActive(true);
+            }
+        }
+        else
+        {
+            slidingIcon.SetActive(false);
+        }
+        
+       
+        
         if (Input.GetMouseButtonDown(0))
         {
-           // _collider2D.enabled = true;
-            transform.position = cam.ScreenToWorldPoint(Input.mousePosition);
+            holding = true;
+            timer = 0;
+            TurnOnCollider();
+           
         }
-        // else if (Input.GetMouseButtonUp(0))
-        // {
-        //     TurnOffCollider();
-        // }
+        else if (Input.GetMouseButtonUp(0))
+        {
+            holding = false;
+            TurnOffCollider();
+        }
 #endif
         if (Input.touchCount > 0)
         {
+            var pos2 = cam.ScreenToWorldPoint(Input.GetTouch(0).position);
+            pos2.z = 0;
+            transform.position = pos2;
+            if (holding)
+            {
+                timer += Time.deltaTime;
+                if (timer > maxTimeForTap)
+                {
+                    Combo.instance.StartSliding();
+                    slidingIcon.SetActive(true);
+                }
+            }
+            else
+            {
+                slidingIcon.SetActive(false);
+            }
             if (Input.GetTouch(0).phase == TouchPhase.Began)
             {
-                //_collider2D.enabled = true;
-                transform.position = cam.ScreenToWorldPoint(Input.GetTouch(0).position);
+                holding = true;
+                timer = 0;
+                TurnOnCollider();
+                //  transform.position = cam.ScreenToWorldPoint(Input.GetTouch(0).position);
             }
-            // else if (Input.GetTouch(0).phase == TouchPhase.Ended)
-            // {
-            //     TurnOffCollider();
-            // }
+            else if (Input.GetTouch(0).phase == TouchPhase.Ended)
+            {
+                holding = false;
+                TurnOffCollider();
+            }
         }
 
     }
+    private void TurnOnCollider()
+    {
+        _collider2D.enabled = true;
+        trailRenderer.enabled = true;
+        //trailRenderer.Clear();
+    }
+    private void TurnOffCollider()
+    {
+        _collider2D.enabled = false;
+        trailRenderer.enabled = false;
+        trailRenderer.Clear();
+    }
 
-    // private void TurnOffCollider()
-    // {
-    //     _collider2D.enabled = false;
-    // }
 
     //    private void OnTriggerEnter2D(Collider2D col)
     // {

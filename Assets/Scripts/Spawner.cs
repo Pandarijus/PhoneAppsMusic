@@ -2,28 +2,40 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 public class Spawner : Disposer
 {
     public static Spawner instance;
     [SerializeField] Transform[] blockSpawnTransforms;
-    private float cooldown = 0.4f;
+    private float cooldown = 0.25f;
+    private float speed = 5f;
     private float cooldownTimer;
     private int explosionLifetime,animationLifetime;
-    [NonSerialized] public int collumnCount = 6;
-   [SerializeField] private SliderGetter cooldownSliderGetter,speedSliderGetter;
+    public const int COLLIMN_COUNT = 6;
+    private float startRatio;
+    private float minSpeed = 4f;
+    private float maxSpeed = 10f;
+
+   // [SerializeField] private Slider slider;
+   //[SerializeField] private SliderGetter cooldownSliderGetter,speedSliderGetter; //SLIDER
     void Awake()
     {
-        cooldownSliderGetter.value = cooldown;
-
-     //   collumnCount = blockSpawnTransforms.Length;
-        base.Awake();
+        startRatio = cooldown / speed;
+     //   slider.onValueChanged.AddListener(SetSpeed);
         instance = this;
         explosionLifetime = 3000;//(int) explosionPrefab.GetComponent<ParticleSystem>().main.startLifetimeMultiplier*1000;
         animationLifetime = (int) scoreTextPrefab.GetComponent<Animator>().runtimeAnimatorController.animationClips[0].length*1000;
+        MusicBlock.ChangeAllSpeeds(speed);
     }
 
+    public void SetSpeed(float newSpeed)
+    {
+        speed = newSpeed;
+      //  cooldown = startRatio * speed;
+        MusicBlock.ChangeAllSpeeds(speed);
+    }
     private void Update()
     {
         if(cooldownTimer > 0)
@@ -37,19 +49,20 @@ public class Spawner : Disposer
 
     private void StartCooldown()
     {
-        cooldownTimer = cooldownSliderGetter.value;
+        cooldownTimer = cooldown; //cooldownSliderGetter.value; //SLIDER
     }
     public void SpawnMusicBlock(int collumn)
     {
         var musicBlock = GetMusicBlock();
         musicBlock.transform.position = blockSpawnTransforms[collumn].position;
-        musicBlock.GetComponent<MusicBlock>().SetMoveSpeed(speedSliderGetter.value);
+        //musicBlock.GetComponent<MusicBlock>().SetMoveSpeed(speedSliderGetter.value); //SLIDER
+       // musicBlock.GetComponent<MusicBlock>().SetMoveSpeed(speed);
         StartCooldown();
     }
 
     public int GetRandomCollumn()
     {
-       return Random.Range(0, collumnCount);
+       return Random.Range(0, COLLIMN_COUNT);
     }
     // public async Task SpawnExplosion(Vector3 blockPosition)
     // {
@@ -61,7 +74,7 @@ public class Spawner : Disposer
     //   await Task.Delay(explosionLifetime);
     //   DisposeExplosion(explosion);
     //  }
-    public async Task SpawnExplosion(Vector3 blockPosition)
+    public async Task SpawnExplosion(Vector3 blockPosition,Color blockColor)
      {
          //Debug.Log("Spawning explosion"+explosionLifetime);
          //  var explosion = GetMusicBlock(explosionPrefab);
@@ -70,15 +83,18 @@ public class Spawner : Disposer
        var explosion = GetExplosion();
        explosion.transform.position = blockPosition;
        explosion.transform.rotation = Quaternion.Euler(0,0,Mathf.Atan2(dir.y,dir.x) * Mathf.Rad2Deg-90);
+           var main =  explosion.GetComponentInChildren<ParticleSystem>().main;
+           main.startColor =blockColor;// new ParticleSystem.MinMaxGradient(blockColor); //
        await Task.Delay(explosionLifetime);
        DisposeExplosion(explosion);
      }
-    public async Task SpawnAnimatedTextFieled(int addScore,Vector3 blockPosition)
+    public async Task SpawnAnimatedTextFieled(int addScore,Vector3 blockPosition,Color blockColor)
     {
         GameObject g = GetScoreText();
      //   g.transform.parent = canvasTransform;
         g.transform.position = blockPosition;
         g.GetComponent<MyDisplay>().Display(addScore);
+        g.GetComponent<MyDisplay>().SetColor(blockColor);
         await Task.Delay(animationLifetime);
         DisposeScoreText(g);
     }

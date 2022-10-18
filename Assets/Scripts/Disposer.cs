@@ -7,25 +7,34 @@ public class Disposer : MonoBehaviour
     private Stack<GameObject> availableMusicBlocks = new Stack<GameObject>();
     private Stack<GameObject> availableExplosions = new Stack<GameObject>();
     private Stack<GameObject> availableScoreTexts = new Stack<GameObject>();
-    
-    [SerializeField] protected GameObject musicBlockPrefab,explosionPrefab,scoreTextPrefab;
+
+    [SerializeField] private GameObject[] prefabs; //need to be the same as the enum 
+    [SerializeField] private Transform[] parentTransfroms; //need to be the same as the enum 
+
+    // private Dictionary<DisposableType, Stack<GameObject>> dicStackForSpawnedGameObjects = new Dictionary<DisposableType, Stack<GameObject>>();
+    // private Dictionary<DisposableType, Stack<GameObject>> dicStackForSpawnedGameObjectsAll = new Dictionary<DisposableType, Stack<GameObject>>();
+
+    [SerializeField] protected GameObject musicBlockPrefab, explosionPrefab, scoreTextPrefab;
+
+
     public void DisposeMusicBlock(GameObject obj)
     {
         obj.SetActive(false);
         availableMusicBlocks.Push(obj);
     }
+
     public void DisposeExplosion(GameObject obj)
     {
         obj.SetActive(false);
         availableExplosions.Push(obj);
     }
+
     public void DisposeScoreText(GameObject obj)
     {
         obj.SetActive(false);
         availableScoreTexts.Push(obj);
     }
-
-    public GameObject GetMusicBlock()// could cause problems if I rotate the prefab before disposing it
+    public GameObject GetMusicBlock() // could cause problems if I rotate the prefab before disposing it
     {
         if (availableMusicBlocks.Count == 0)
         {
@@ -38,7 +47,8 @@ public class Disposer : MonoBehaviour
             return g;
         }
     }
-    public GameObject GetExplosion()// could cause problems if I rotate the prefab before disposing it
+
+    public GameObject GetExplosion() // could cause problems if I rotate the prefab before disposing it
     {
         if (availableExplosions.Count == 0)
         {
@@ -51,18 +61,26 @@ public class Disposer : MonoBehaviour
             return g;
         }
     }
+
     private Transform canvasTransform;
 
-    protected void Awake()
+
+
+    private Transform GetCanvasTransform()
     {
-        canvasTransform = ScoreManager.instance.transform.parent;
+        if (canvasTransform == null)
+        {
+            canvasTransform = ScoreManager.instance.transform.parent;
+        }
+
+        return canvasTransform;
     }
 
-    public GameObject GetScoreText()// could cause problems if I rotate the prefab before disposing it
+public GameObject GetScoreText()// could cause problems if I rotate the prefab before disposing it
     {
         if (availableScoreTexts.Count == 0)
         {
-            return Instantiate(scoreTextPrefab,canvasTransform);
+            return Instantiate(scoreTextPrefab,GetCanvasTransform());
         }
         else
         {
@@ -71,5 +89,4 @@ public class Disposer : MonoBehaviour
             return g;
         }
     }
-    
 }

@@ -27,7 +27,7 @@ public class Loader
     public static void LoadNextLevel()
     {
         int currentSceneIndex = GetBuildIndex();
-        SceneManager.LoadScene(currentSceneIndex + 1);
+        LoadLevel(currentSceneIndex + 1);
     }
 
     public static void LoadPrevLevel()
@@ -35,30 +35,30 @@ public class Loader
         int currentSceneIndex = GetBuildIndex();
         if (currentSceneIndex == 0)
         {
-            SceneManager.LoadScene(SceneManager.sceneCountInBuildSettings);
+            LoadLevel(SceneManager.sceneCountInBuildSettings);
         }
-        else SceneManager.LoadScene(currentSceneIndex - 1);
+        else LoadLevel(currentSceneIndex - 1);
     }
 
     public static void ReloadLevel()
     {
         
-        SceneManager.LoadScene(GetBuildIndex());
+        LoadLevel(GetBuildIndex());
     }
 
     public static void LoadPlay()
     {
-        SceneManager.LoadScene("Play");
+        LoadLevel("Play");
     }
 
     public static void LoadMenu()
     {
-        SceneManager.LoadScene("Menu");
+        LoadLevel("Menu");
     }
 
     public static void LoadFirst()
     {
-        SceneManager.LoadScene(0);
+        LoadLevel(0);
     }
 
     public static void QuitGame()
@@ -68,18 +68,28 @@ public class Loader
 
     public static void LoadLevel(string scene)
     {
+        IfIsPlaySaveScore();
         SceneManager.LoadScene(scene);
     }
 
     public static void LoadLevel(int index)
     {
+        IfIsPlaySaveScore();
         SceneManager.LoadScene(index);
+    }
+
+    private static void IfIsPlaySaveScore()
+    {
+        if (GetActiveScenName().Equals("Play"))
+        {
+            Saver.instance.SaveScore();
+        }
     }
 
     public static void LoadLevel(Level level)
     {
         //SceneManager.LoadScene((int)level);
-        SceneManager.LoadScene(level.ToString());
+        LoadLevel(level.ToString());
     }
     public static string GetActiveScenName()
     {

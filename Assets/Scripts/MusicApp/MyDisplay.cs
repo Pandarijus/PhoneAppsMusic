@@ -1,4 +1,3 @@
-
 using TMPro;
 using UnityEngine;
 
@@ -31,9 +30,9 @@ public class MyDisplay : MonoBehaviour
         GetTextField().text = intValue.ToString();
     }
 
-    public void Display(float intValue)
+    public void Display(float floatValue)
     {
-        GetTextField().text = intValue.ToString();
+        GetTextField().text = floatValue.ToString();
     }
 
     public void Display2DecimalPlaces(float floatValue)
@@ -46,5 +45,10 @@ public class MyDisplay : MonoBehaviour
         float dec = 10 * decimalPlaces;
         floatValue = ((int)(floatValue * dec)) / dec;
         GetTextField().text = floatValue.ToString();
+    }
+
+    public void SetColor(Color newColor)
+    {
+        GetTextField().color = newColor;
     }
 }

@@ -9,6 +9,7 @@ public class SoundManager : MonoBehaviour
 {
   //  [SerializeField] private SliderGetter slider,popVolume;
     public static SoundManager instance;
+    private static float globalVolume = 1f;
 
     [SerializeField] private bool survive;
     [SerializeField] AudioClip[] audioClips;
@@ -51,7 +52,7 @@ public class SoundManager : MonoBehaviour
     public void PlayBlockCrunchySounds()
     {
         AudioClip clip = audioClips[0];
-        PlayClip(clip,Saver.instance.popVolume);
+        PlayClip(clip,Saver.instance.popVolume*AudioVisualizer.averageLoudness*0.01f);
        // PlaySound(Sound.blockCrunsh);
         // int overlayAmount = Random.Range(0,audioClips.Length);
         // Debug.Log("overlayAmount:"+overlayAmount);
@@ -68,6 +69,13 @@ public class SoundManager : MonoBehaviour
         PlayClip(clip,volume);
     }
 
+    // if (stack.Peek() == null)//if stack is null reset it
+    // {
+    //     stack.Clear();
+    //     PlayClip(clip,volume);
+    //     return;
+    // }
+
     private void PlayClip( AudioClip clip,float volume = 1)
     {
         GameObject g;
@@ -80,13 +88,7 @@ public class SoundManager : MonoBehaviour
         }
         else
         {
-            // if (stack.Peek() == null)//if stack is null reset it
-            // {
-            //     stack.Clear();
-            //     PlayClip(clip,volume);
-            //     return;
-            // }
-            
+ 
             aud = stack.Pop();
             aud.gameObject.SetActive(true);
             g = aud.gameObject;
@@ -97,8 +99,8 @@ public class SoundManager : MonoBehaviour
 //        Debug.Log(transform);
         g.transform.parent = transform;
         g.transform.position =  Camera.main.transform.position;
-        aud.volume = volume*0.2f+dRand*0.1f;
-        aud.pitch += dRand;
+        aud.volume = globalVolume*(volume*0.2f+dRand*0.1f);
+        //aud.pitch += dRand;
         aud.clip = clip;
         aud.Play();
         StartCoroutine(DisableSoundAfterPlayed(aud));
@@ -112,6 +114,11 @@ public class SoundManager : MonoBehaviour
         stack.Push(aud);
     }
 
+    public static void SetVolume(float newVolume)
+    {
+        Debug.Log("global Volume{");
+        globalVolume = newVolume;
+    }
 }
 
 
